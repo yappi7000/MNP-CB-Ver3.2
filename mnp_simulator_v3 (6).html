@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MNP実質収支シミュレーター v3</title>
+<style>
+  :root{
+    --bg:#0b0f19;
+    --panel:#131a2a;
+    --panel2:#0f1522;
+    --panel3:#0c1120;
+    --line:#232c40;
+    --gold:#f2c14e;
+    --green:#3ddc84;
+    --red:#ff6b6b;
+    --text:#e8ecf4;
+    --sub:#8a93a8;
+    --blue:#5b9dff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Hiragino Sans","Noto Sans JP",-apple-system,BlinkMacSystemFont,sans-serif;
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:1280px;margin:0 auto;}
+  header{display:flex;align-items:flex-start;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+  .icon{
+    width:52px;height:52px;border-radius:14px;
+    background:linear-gradient(135deg,var(--blue),#3a6fd8);
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;flex-shrink:0;
+  }
+  h1{font-size:24px;margin:0 0 4px;letter-spacing:.5px;}
+  .sub{color:var(--sub);font-size:13px;margin:0;}
+  .badge-v2{
+    display:inline-block;background:var(--blue);color:#fff;font-size:11px;
+    font-weight:800;padding:2px 8px;border-radius:6px;margin-left:8px;vertical-align:middle;
+  }
+
+  .settings{
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:20px 22px;margin-bottom:18px;display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;
+  }
+  .settings .field{min-width:150px;}
+  .settings label{font-size:12px;color:var(--sub);display:block;margin-bottom:6px;}
+  .settings input[type=number]{
+    width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    color:var(--gold);font-size:18px;font-weight:700;padding:8px 10px;
+  }
+  .settings textarea{
+    width:100%;min-width:320px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;resize:vertical;min-height:56px;
+  }
+  .settings .note{color:var(--sub);font-size:12px;max-width:260px;line-height:1.5;}
+  .settings .grow{flex:1;min-width:260px;}
+
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin:0 0 18px;flex-wrap:wrap;gap:12px;}
+  .btn{
+    background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--blue);}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .btn.primary:hover{background:#4a8bef;}
+  .btn.ghost{background:transparent;color:var(--sub);}
+  .btn.small{padding:5px 10px;font-size:11px;border-radius:7px;}
+
+  .lines{display:flex;flex-direction:column;gap:14px;}
+  .line-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  }
+  .line-head{
+    display:flex;align-items:center;gap:10px;padding:12px 16px;
+    background:var(--panel2);border-bottom:1px solid var(--line);flex-wrap:wrap;
+  }
+  .line-head input[type=text]{
+    background:var(--panel3);border:1px solid var(--line);border-radius:8px;color:var(--text);
+    font-weight:800;font-size:14px;padding:7px 10px;min-width:200px;flex:1;
+  }
+  .line-head select{
+    background:var(--panel3);border:1px solid var(--line);border-radius:8px;color:var(--gold);
+    font-weight:700;font-size:13px;padding:7px 10px;
+  }
+  .result-pill{
+    margin-left:auto;font-weight:900;font-size:16px;padding:6px 14px;border-radius:10px;white-space:nowrap;
+  }
+  .result-pill.plus{background:rgba(61,220,132,.12);color:var(--green);}
+  .result-pill.minus{background:rgba(255,107,107,.12);color:var(--red);}
+
+  .grid-fields{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:10px;
+    padding:14px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .grid-fields .f label{font-size:11px;color:var(--sub);display:block;margin-bottom:4px;}
+  .grid-fields input{
+    width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    color:var(--text);padding:7px 8px;font-size:13px;
+  }
+  .grid-fields input:focus{outline:2px solid var(--blue);border-color:var(--blue);}
+  .remarks-row{padding:0 16px 14px;}
+  .remarks-row label{font-size:11px;color:var(--sub);display:block;margin-bottom:4px;}
+  .remarks-row input{
+    width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    color:var(--text);padding:8px 10px;font-size:13px;
+  }
+
+  .options-panel{padding:12px 16px 16px;}
+  .options-header{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;
+    font-size:12px;color:var(--sub);flex-wrap:wrap;gap:8px;
+  }
+  .options-list{display:flex;flex-direction:column;gap:6px;}
+  .option-item{
+    display:flex;align-items:center;gap:8px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:6px 8px;flex-wrap:wrap;
+  }
+  .option-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0;}
+  .option-item .opt-name{
+    background:var(--panel3);border:1px solid var(--line);border-radius:6px;color:var(--text);
+    padding:6px 8px;font-size:12px;font-weight:700;flex:1;min-width:110px;
+  }
+  .option-item .opt-label{font-size:11px;color:var(--sub);white-space:nowrap;}
+  .option-item .opt-num{
+    width:70px;background:var(--panel3);border:1px solid var(--line);border-radius:6px;
+    color:var(--text);padding:6px 6px;font-size:12px;text-align:right;
+  }
+  .option-item .opt-sum{font-size:12px;font-weight:800;color:var(--gold);white-space:nowrap;min-width:70px;text-align:right;}
+  .del-btn{background:none;border:none;color:var(--sub);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:6px;}
+  .del-btn:hover{color:var(--red);background:rgba(255,107,107,.1);}
+  .empty-opt{color:var(--sub);font-size:12px;padding:8px 4px;}
+
+  .line-actions{display:flex;justify-content:flex-end;gap:8px;padding:10px 16px;background:var(--panel3);}
+
+  .summary{margin-top:24px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;}
+  .summary-head-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+  .summary-head-row h2{margin:0;}
+  .summary h2{font-size:15px;color:var(--sub);font-weight:700;letter-spacing:.5px;}
+
+  .total-panel{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .total-box{
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:18px 20px;text-align:center;
+  }
+  .total-box .label{font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:700;}
+  .total-box .value{font-size:26px;font-weight:900;}
+  .total-box.cashback .value{color:var(--gold);}
+  .total-box.cost .value{color:var(--sub);}
+  .total-box.net{
+    background:linear-gradient(135deg,rgba(61,220,132,.14),rgba(61,220,132,.04));
+    border-color:rgba(61,220,132,.4);
+  }
+  .total-box.net.minus{
+    background:linear-gradient(135deg,rgba(255,107,107,.14),rgba(255,107,107,.04));
+    border-color:rgba(255,107,107,.4);
+  }
+  .total-box.net .value{color:var(--green);}
+  .total-box.net.minus .value{color:var(--red);}
+  .total-box .sub-label{font-size:11px;color:var(--sub);margin-top:6px;}
+  .summary-row{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--line);font-size:14px;}
+  .summary-row:last-child{border-bottom:none;}
+  .summary-row .name{font-weight:700;}
+  .summary-row .detail{color:var(--sub);font-size:12px;margin-top:2px;}
+  .rank-badge{
+    display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;
+    font-size:11px;font-weight:800;margin-right:6px;background:var(--panel2);color:var(--sub);
+  }
+  .rank-1{background:var(--gold);color:#1a1400;}
+  .rank-2{background:#c9d3e0;color:#1a1400;}
+  .rank-3{background:#c98a4b;color:#1a1400;}
+
+  footer{text-align:center;color:var(--sub);font-size:11px;margin-top:32px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="icon">📱</div>
+    <div>
+      <h1>MNP実質収支シミュレーター<span class="badge-v2">v3</span></h1>
+      <p class="sub">プラン・事務手数料・キャッシュバック・オプション・割引・解約金・維持期間まで込みで最終的な手残りを計算する（2026/07/07時点の料金表を反映）</p>
+      <p class="sub" style="margin-top:6px;">やっぴ〜Presents（<a href="https://twitter.com/8p_thankyou" style="color:var(--blue);text-decoration:none;" target="_blank" rel="noopener">@8p_thankyou</a>）／LINE公式（<a href="http://lin.ee/AsTWK4D" style="color:var(--blue);text-decoration:none;" target="_blank" rel="noopener">lin.ee/AsTWK4D</a>）</p>
+    </div>
+  </header>
+
+  <div class="settings">
+    <div class="field">
+      <label>共通 維持期間（ヶ月）</label>
+      <input type="number" id="months" value="7" min="1" oninput="calcAll()">
+    </div>
+    <div class="note">各回線カードの「維持月数（個別上書き）」を空欄にすると、この共通値が使われるよ。ネット単体契約だけ短いなど回線ごとに違う場合はカード側で上書きしてね。<br>※2026/07/07時点：解約金は全社・全プランで一律0円。au/UQモバイルの店頭事務手数料は8/1から3,850円→4,950円に改定予定（オンラインは3,850円のまま）。</div>
+    <div class="grow">
+      <label style="font-size:12px;color:var(--sub);display:block;margin-bottom:6px;">案件全体の注意事項メモ（自由記述・全回線共通）</label>
+      <textarea id="globalNotes" oninput="saveGlobal()" placeholder="例：光の空申込禁止／au系からの乗換不可／CBは即日au PAYチャージ／当月CB履歴ある場合は対象外／週によって内容変わる可能性あり…など"></textarea>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn primary" onclick="addLine()">＋ 回線を追加</button>
+      <button class="btn ghost" onclick="loadSample()">サンプル（今回のUQ案件）を読み込む</button>
+    </div>
+  </div>
+
+  <div class="total-panel" id="totalPanel"></div>
+
+  <div class="lines" id="lines"></div>
+
+  <div class="summary">
+    <div class="summary-head-row">
+      <h2>ランキング（実質収支が高い順）</h2>
+      <button class="btn small" onclick="copyResultsText()">📋 結果をテキストでコピー</button>
+    </div>
+    <div id="ranking"></div>
+  </div>
+
+  <footer>
+    入力値はブラウザに自動保存されます。キャリアを選んで「オプション候補読込」を押すとオプション候補が入ります（チェックを入れた分だけ計算されます）。<br>
+    やっぴ〜Presents（<a href="https://twitter.com/8p_thankyou" style="color:var(--sub);" target="_blank" rel="noopener">@8p_thankyou</a>）／LINE公式（<a href="http://lin.ee/AsTWK4D" style="color:var(--sub);" target="_blank" rel="noopener">lin.ee/AsTWK4D</a>）<br>
+    無断転用を禁ずる。あくまでも個人でのツールとして使用してください。
+  </footer>
+</div>
+
+<script>
+const STORAGE_KEY = 'mnp_sim_v3_lines';
+const STORAGE_MONTHS = 'mnp_sim_v3_months';
+const STORAGE_NOTES = 'mnp_sim_v3_notes';
+
+const CARRIER_LIST = ['UQ','au','ahamo','楽天モバイル','LINEMO','ドコモ','ソフトバンク','ワイモバイル','その他'];
+
+// プラン名と月額（税込）。2026/07/07時点の公開情報をもとに作成。データ量の区切り等は簡略化しているので契約時は必ず公式で最終確認してね。
+const PLAN_PRESETS = {
+  'ドコモ': [
+    {name:'ドコモMAX（無制限）', monthly:8448},
+    {name:'ドコモポイ活MAX（無制限）', monthly:11748},
+    {name:'ドコモポイ活20（20GBまで）', monthly:7898},
+    {name:'ドコモポイ活20（20GB超〜無制限）', monthly:9570},
+    {name:'ドコモmini（10GB）', monthly:3850},
+    {name:'ドコモmini（4GB）', monthly:2750},
+  ],
+  'ahamo': [
+    {name:'ahamo（基本 30GB）', monthly:2970},
+    {name:'ahamo大盛り（110GB）', monthly:4950},
+  ],
+  'au': [
+    {name:'auバリューリンク（無制限・200GB超で制限）', monthly:8008},
+    {name:'auバリューリンク マネ活2（同上）', monthly:9328},
+    {name:'使い放題MAX＋（無制限）', monthly:7788},
+    {name:'使い放題MAX＋ マネ活2（無制限）', monthly:9108},
+    {name:'スマホミニプラン＋（〜1GB）', monthly:4928},
+    {name:'スマホミニプラン＋（〜3GB）', monthly:6578},
+    {name:'スマホミニプラン＋（〜5GB）', monthly:8228},
+  ],
+  'UQ': [
+    {name:'コミコミプラン＋（35GB・10分かけ放題込）', monthly:3828},
+    {name:'バリュー/トクトクプラン（〜5GB・〜30GB 定価上限）', monthly:4048},
+  ],
+  '楽天モバイル': [],
+  'LINEMO': [],
+  'ソフトバンク': [
+    {name:'ペイトク2（無制限）', monthly:9955},
+    {name:'テイガク無制限', monthly:7755},
+    {name:'ミニフィット2（〜1GB）', monthly:3278},
+    {name:'ミニフィット2（〜2GB）', monthly:4378},
+    {name:'ミニフィット2（〜4GB）', monthly:5478},
+  ],
+  'ワイモバイル': [
+    {name:'シンプル3 S（5GB）', monthly:3278},
+    {name:'シンプル3 M（30GB）', monthly:4378},
+    {name:'シンプル3 L（35GB）', monthly:5478},
+  ],
+  'その他': [],
+};
+
+// 契約事務手数料（税込）。店頭／オンラインで金額が異なるキャリアが多い。解約金は現在(2026/07/07時点)全社0円。
+const FEE_PRESETS = {
+  'ドコモ':      {store:4950, online:0,    note:'オンラインショップは事務手数料0円'},
+  'ahamo':      {store:0,    online:0,    note:'オンライン専用ブランドのため店頭手続きなし'},
+  'au':         {store:3850, online:3850, note:'8/1より店頭のみ4,950円に改定予定'},
+  'UQ':         {store:3850, online:3850, note:'8/1より店頭のみ4,950円に改定予定'},
+  '楽天モバイル': {store:0,    online:0,    note:'金額は要確認（不明なため0円にしています）'},
+  'LINEMO':     {store:0,    online:0,    note:'オンライン専用ブランド。金額は要確認'},
+  'ソフトバンク': {store:4950, online:3850, note:''},
+  'ワイモバイル': {store:4950, online:3850, note:''},
+  'その他':      {store:0,    online:0,    note:''},
+};
+
+// キャリア別オプションのプリセット（税込・月額）。2026/07/07時点で判明している金額を反映。不明なものは0円のままなので現地案内に合わせて入力してね。
+const CARRIER_PRESETS = {
+  'UQ': [
+    {name:'24時間かけ放題', monthlyAmount:1980, chargedMonths:0},
+    {name:'5分/10分かけ放題', monthlyAmount:880, chargedMonths:0},
+    {name:'データ増量オプションⅡ', monthlyAmount:550, chargedMonths:0},
+    {name:'Google AI Pro', monthlyAmount:1760, chargedMonths:0},
+    {name:'Pontaパス', monthlyAmount:548, chargedMonths:0},
+    {name:'Apple Music', monthlyAmount:1080, chargedMonths:0},
+    {name:'YouTube Premium', monthlyAmount:1280, chargedMonths:0},
+    {name:'TELASA', monthlyAmount:990, chargedMonths:0},
+    {name:'auわんにゃんサポート', monthlyAmount:550, chargedMonths:0},
+    {name:'auおうちあんしんサポート', monthlyAmount:550, chargedMonths:0},
+    {name:'自転車サポート', monthlyAmount:550, chargedMonths:0},
+    {name:'使い方サポート', monthlyAmount:319, chargedMonths:0},
+    {name:'auじぶん銀行', monthlyAmount:0, chargedMonths:0},
+    {name:'持込保証', monthlyAmount:715, chargedMonths:3},
+    {name:'故障紛失サポート', monthlyAmount:0, chargedMonths:3},
+  ],
+  'au': [
+    {name:'24時間かけ放題', monthlyAmount:1980, chargedMonths:0},
+    {name:'5分/10分かけ放題', monthlyAmount:880, chargedMonths:0},
+    {name:'通話パック60', monthlyAmount:660, chargedMonths:0},
+    {name:'データ増量オプションⅡ', monthlyAmount:550, chargedMonths:0},
+    {name:'Google AI Pro', monthlyAmount:1760, chargedMonths:0},
+    {name:'Pontaパス', monthlyAmount:548, chargedMonths:0},
+    {name:'Apple Music', monthlyAmount:1080, chargedMonths:0},
+    {name:'YouTube Premium', monthlyAmount:1280, chargedMonths:0},
+    {name:'TELASA', monthlyAmount:990, chargedMonths:0},
+    {name:'auわんにゃんサポート', monthlyAmount:550, chargedMonths:0},
+    {name:'auおうちあんしんサポート', monthlyAmount:550, chargedMonths:0},
+    {name:'自転車サポート', monthlyAmount:550, chargedMonths:0},
+    {name:'使い方サポート', monthlyAmount:319, chargedMonths:0},
+    {name:'マネ活プラン', monthlyAmount:0, chargedMonths:0},
+    {name:'保険オプション', monthlyAmount:0, chargedMonths:3},
+    {name:'持込保証', monthlyAmount:715, chargedMonths:3},
+    {name:'故障紛失サポート', monthlyAmount:0, chargedMonths:3},
+  ],
+  'ahamo': [
+    {name:'かけ放題オプション（+通話基本1,100円込）', monthlyAmount:3080, chargedMonths:0},
+    {name:'ahamo大盛り（データ増量差額）', monthlyAmount:1980, chargedMonths:0},
+    {name:'Apple Music', monthlyAmount:1080, chargedMonths:0},
+    {name:'YouTube Premium', monthlyAmount:1280, chargedMonths:0},
+    {name:'Netflix', monthlyAmount:890, chargedMonths:0},
+    {name:'ケータイ補償サービス', monthlyAmount:0, chargedMonths:3},
+  ],
+  '楽天モバイル': [
+    {name:'楽天でんき', monthlyAmount:0, chargedMonths:0},
+    {name:'楽天カード新規発行', monthlyAmount:0, chargedMonths:0},
+    {name:'故障紛失サポート', monthlyAmount:0, chargedMonths:3},
+    {name:'留守番電話プラス', monthlyAmount:0, chargedMonths:0},
+  ],
+  'LINEMO': [
+    {name:'留守番電話パック', monthlyAmount:0, chargedMonths:0},
+    {name:'割込通話', monthlyAmount:0, chargedMonths:0},
+    {name:'LYPプレミアム', monthlyAmount:508, chargedMonths:0},
+  ],
+  'ドコモ': [
+    {name:'24時間かけ放題', monthlyAmount:1980, chargedMonths:0},
+    {name:'5分/10分かけ放題', monthlyAmount:880, chargedMonths:0},
+    {name:'Apple Music', monthlyAmount:1080, chargedMonths:0},
+    {name:'YouTube Premium', monthlyAmount:1280, chargedMonths:0},
+    {name:'Netflix', monthlyAmount:890, chargedMonths:0},
+    {name:'あんしん遠隔サポート', monthlyAmount:440, chargedMonths:0},
+    {name:'dカード', monthlyAmount:0, chargedMonths:0},
+    {name:'home 5G セット', monthlyAmount:0, chargedMonths:0},
+    {name:'ケータイ補償サービス', monthlyAmount:0, chargedMonths:3},
+    {name:'あんしんパック', monthlyAmount:0, chargedMonths:0},
+    {name:'留守番電話サービス', monthlyAmount:0, chargedMonths:0},
+  ],
+  'ソフトバンク': [
+    {name:'24時間かけ放題', monthlyAmount:1980, chargedMonths:0},
+    {name:'5分/10分かけ放題', monthlyAmount:880, chargedMonths:0},
+    {name:'データ増量オプション', monthlyAmount:550, chargedMonths:0},
+    {name:'LYPプレミアム（プラン内蔵の場合は0円）', monthlyAmount:0, chargedMonths:0},
+    {name:'Apple Music', monthlyAmount:1080, chargedMonths:0},
+    {name:'YouTube Premium', monthlyAmount:1280, chargedMonths:0},
+    {name:'Netflix', monthlyAmount:890, chargedMonths:0},
+    {name:'新トクするサポート', monthlyAmount:0, chargedMonths:0},
+    {name:'生活あんしんパック', monthlyAmount:550, chargedMonths:3},
+    {name:'みまもりサービス', monthlyAmount:0, chargedMonths:0},
+  ],
+  'ワイモバイル': [
+    {name:'24時間かけ放題', monthlyAmount:1980, chargedMonths:0},
+    {name:'5分/10分かけ放題', monthlyAmount:880, chargedMonths:0},
+    {name:'データ増量オプション', monthlyAmount:550, chargedMonths:0},
+    {name:'LYPプレミアム（プラン内蔵の場合は0円）', monthlyAmount:0, chargedMonths:0},
+    {name:'PayPayカード', monthlyAmount:0, chargedMonths:0},
+    {name:'故障あんしんパック', monthlyAmount:0, chargedMonths:3},
+    {name:'家族割引サービス', monthlyAmount:0, chargedMonths:0},
+  ],
+  'その他': [],
+};
+
+function emptyLine(){
+  return {
+    label:'', carrier:'UQ', plan:'', monthly:0, cashback:0, setup:0,
+    house:0, denki:0, card:0, cancel:0, monthsOverride:'', remarks:'',
+    options: []
+  };
+}
+
+function sampleLines(){
+  return [
+    {
+      label:'1回線目（MNP＋ネット・でんきセット割）', carrier:'UQ', plan:'コミコミプラン＋（35GB・10分かけ放題込）', monthly:3828,
+      cashback:40000, setup:0, house:0, denki:0, card:0, cancel:0, monthsOverride:'',
+      remarks:'内訳：SIM単2万＋ネットセット割0.5万＋でんきセット割0.5万＋クレカ申込0.5万＋楽天から乗換0.5万＝4万（推測ですが全部条件クリア時の最大額。実際の対象条件は都度確認して）',
+      options:[
+        {name:'auじぶん銀行', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'Pontaパス', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'Apple Music', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'YouTube Premium', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'TELASA', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'持込保証', monthlyAmount:715, chargedMonths:3, checked:true},
+        {name:'故障紛失サポート', monthlyAmount:0, chargedMonths:3, checked:false},
+      ]
+    },
+    {
+      label:'2回線目', carrier:'UQ', plan:'コミコミプラン＋（35GB・10分かけ放題込）', monthly:3828,
+      cashback:35000, setup:0, house:0, denki:0, card:0, cancel:0, monthsOverride:'',
+      remarks:'複数回線の場合、持込保証は1台分のみでOK（要現地確認）',
+      options:[
+        {name:'auじぶん銀行', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'Pontaパス', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'Apple Music', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'YouTube Premium', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'TELASA', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'持込保証', monthlyAmount:715, chargedMonths:3, checked:false},
+        {name:'故障紛失サポート', monthlyAmount:0, chargedMonths:3, checked:false},
+      ]
+    },
+    {
+      label:'3回線目（利用者必須）', carrier:'UQ', plan:'コミコミプラン＋（35GB・10分かけ放題込）', monthly:3828,
+      cashback:35000, setup:0, house:0, denki:0, card:0, cancel:0, monthsOverride:'',
+      remarks:'3回線目は利用者登録必須。書類は住所・苗字が同じなら写真可、違えば原本が必要',
+      options:[
+        {name:'auじぶん銀行', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'Pontaパス', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'Apple Music', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'YouTube Premium', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'TELASA', monthlyAmount:0, chargedMonths:0, checked:false},
+        {name:'持込保証', monthlyAmount:715, chargedMonths:3, checked:false},
+        {name:'故障紛失サポート', monthlyAmount:0, chargedMonths:3, checked:false},
+      ]
+    },
+  ];
+}
+
+const sampleNotes = '光の空申込禁止／CBは即日au PAYチャージ／au系からの乗換不可／電気切替は供給地点番号とお客様番号が必要／ネットセットでルーター契約した場合はネットのみ契約月+4ヶ月維持必須／当月中にCB履歴がある場合は対象外／週によって内容が変わる可能性あり（要最新確認）';
+
+let lines = [];
+
+function loadSample(){
+  lines = sampleLines();
+  document.getElementById('months').value = 7;
+  document.getElementById('globalNotes').value = sampleNotes;
+  render();
+  calcAll();
+  saveGlobal();
+}
+
+function saveAll(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
+}
+function saveGlobal(){
+  localStorage.setItem(STORAGE_MONTHS, document.getElementById('months').value);
+  localStorage.setItem(STORAGE_NOTES, document.getElementById('globalNotes').value);
+}
+
+function init(){
+  try{
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const savedMonths = localStorage.getItem(STORAGE_MONTHS);
+    const savedNotes = localStorage.getItem(STORAGE_NOTES);
+    if(saved){
+      lines = JSON.parse(saved);
+      if(savedMonths) document.getElementById('months').value = savedMonths;
+      if(savedNotes) document.getElementById('globalNotes').value = savedNotes;
+    } else {
+      lines = sampleLines();
+      document.getElementById('months').value = 7;
+      document.getElementById('globalNotes').value = sampleNotes;
+    }
+  } catch(e){
+    lines = sampleLines();
+  }
+  render();
+  calcAll();
+}
+
+function addLine(){
+  lines.push(emptyLine());
+  render();
+  calcAll();
+}
+
+function delLine(i){
+  lines.splice(i,1);
+  render();
+  calcAll();
+}
+
+function updateLineField(i, field, value, isNumber){
+  lines[i][field] = isNumber ? (parseFloat(value)||0) : value;
+  calcAll();
+}
+
+function updateMonthsOverride(i, value){
+  lines[i].monthsOverride = value === '' ? '' : (parseFloat(value)||0);
+  calcAll();
+}
+
+function changeCarrier(i, value){
+  lines[i].carrier = value;
+  // キャリアが変わったら、前のキャリアの古いプラン名と月額、オプションを綺麗にリセットする
+  lines[i].plan = '';
+  lines[i].monthly = 0;
+  lines[i].options = [];
+  render();
+  calcAll();
+}
+
+function loadPreset(i){
+  const carrier = lines[i].carrier;
+  const preset = CARRIER_PRESETS[carrier] || [];
+  // 課金月数が設定されている（＝無料期間内解約が前提でない必須系）オプションは最初からチェックを入れておく
+  lines[i].options = preset.map(o => ({...o, checked: o.chargedMonths > 0}));
+  render();
+  calcAll();
+}
+
+function loadPlanPreset(i, planName){
+  if(!planName) return;
+  const plans = PLAN_PRESETS[lines[i].carrier] || [];
+  const found = plans.find(p => p.name === planName);
+  if(found){
+    lines[i].plan = found.name;
+    lines[i].monthly = found.monthly;
+  }
+  render();
+  calcAll();
+}
+
+function loadFeePreset(i, type){
+  if(!type) return;
+  const fee = FEE_PRESETS[lines[i].carrier];
+  if(fee){
+    lines[i].setup = fee[type] || 0;
+  }
+  render();
+  calcAll();
+}
+
+function addCustomOption(i){
+  lines[i].options.push({name:'', monthlyAmount:0, chargedMonths:0, checked:true});
+  render();
+  calcAll();
+}
+
+function removeOption(i, oi){
+  lines[i].options.splice(oi,1);
+  render();
+  calcAll();
+}
+
+function updateOption(i, oi, field, value, isNumber){
+  lines[i].options[oi][field] = isNumber ? (parseFloat(value)||0) : value;
+  calcAll();
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function optionsHtml(i, line){
+  if(line.options.length === 0){
+    return '<div class="empty-opt">プリセット未読込。上の「プリセット読込」ボタンでキャリアの候補を呼び出せるよ（自分で追加もOK）。</div>';
+  }
+  return line.options.map((o, oi) => {
+    const cost = o.checked ? (o.monthlyAmount||0) * (o.chargedMonths||0) : 0;
+    return `
+      <div class="option-item">
+        <input type="checkbox" ${o.checked?'checked':''} onchange="updateOption(${i},${oi},'checked',this.checked,false)">
+        <input type="text" class="opt-name" value="${escapeHtml(o.name)}" oninput="updateOption(${i},${oi},'name',this.value,false)" placeholder="オプション名">
+        <span class="opt-label">月額</span>
+        <input type="number" class="opt-num" value="${o.monthlyAmount}" oninput="updateOption(${i},${oi},'monthlyAmount',this.value,true)">
+        <span class="opt-label">課金月数</span>
+        <input type="number" class="opt-num" value="${o.chargedMonths}" step="0.5" min="0" oninput="updateOption(${i},${oi},'chargedMonths',this.value,true)">
+        <span class="opt-sum">＝${cost.toLocaleString()}円</span>
+        <button class="del-btn" onclick="removeOption(${i},${oi})" title="削除">✕</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function render(){
+  const wrap = document.getElementById('lines');
+  wrap.innerHTML = lines.map((line, i) => {
+    const carrierOptions = CARRIER_LIST.map(c => `<option value="${c}" ${line.carrier===c?'selected':''}>${c}</option>`).join('');
+    const plans = PLAN_PRESETS[line.carrier] || [];
+    const planOptionsHtml = plans.length > 0
+      ? plans.map(p => `<option value="${escapeHtml(p.name)}" ${line.plan===p.name?'selected':''}>${escapeHtml(p.name)}（${p.monthly.toLocaleString()}円）</option>`).join('')
+      : '<option value="" disabled>（プリセットなし・プラン名欄に自由入力してね）</option>';
+    return `
+      <div class="line-card">
+        <div class="line-head">
+          <input type="text" value="${escapeHtml(line.label)}" oninput="updateLineField(${i},'label',this.value,false)" placeholder="回線名・メモ（例：1回線目）">
+          <select onchange="changeCarrier(${i}, this.value)">${carrierOptions}</select>
+          <select onchange="loadFeePreset(${i}, this.value)">
+            <option value="">事務手数料(自動入力)</option>
+            <option value="store">店頭</option>
+            <option value="online">オンライン</option>
+          </select>
+          <select onchange="loadPlanPreset(${i}, this.value)"><option value="">プラン選択(自動入力)</option>${planOptionsHtml}</select>
+          <button class="btn small" onclick="loadPreset(${i})">🔄 オプション候補読込</button>
+          <span class="result-pill" id="pill-${i}">-</span>
+        </div>
+        <div class="grid-fields">
+          <div class="f"><label>プラン名</label><input type="text" value="${escapeHtml(line.plan)}" oninput="updateLineField(${i},'plan',this.value,false)"></div>
+          <div class="f"><label>月額料金(円)</label><input type="number" value="${line.monthly}" oninput="updateLineField(${i},'monthly',this.value,true)"></div>
+          <div class="f"><label>キャッシュバック合計(円)</label><input type="number" value="${line.cashback}" oninput="updateLineField(${i},'cashback',this.value,true)"></div>
+          <div class="f"><label>事務手数料(円)</label><input type="number" value="${line.setup}" oninput="updateLineField(${i},'setup',this.value,true)"></div>
+          <div class="f"><label>おうち割(円/月)</label><input type="number" value="${line.house}" oninput="updateLineField(${i},'house',this.value,true)"></div>
+          <div class="f"><label>でんき割(円/月)</label><input type="number" value="${line.denki}" oninput="updateLineField(${i},'denki',this.value,true)"></div>
+          <div class="f"><label>カード割(円/月)</label><input type="number" value="${line.card}" oninput="updateLineField(${i},'card',this.value,true)"></div>
+          <div class="f"><label>解約金(円)</label><input type="number" value="${line.cancel}" oninput="updateLineField(${i},'cancel',this.value,true)"></div>
+          <div class="f"><label>維持月数（個別上書き）</label><input type="number" value="${line.monthsOverride}" placeholder="共通設定を使う" oninput="updateMonthsOverride(${i},this.value)"></div>
+        </div>
+        <div class="remarks-row">
+          <label>備考／条件メモ</label>
+          <input type="text" value="${escapeHtml(line.remarks)}" oninput="updateLineField(${i},'remarks',this.value,false)" placeholder="この回線だけの注意点など">
+        </div>
+        <div class="options-panel">
+          <div class="options-header">
+            <span>オプション（キャリアを選んで「オプション候補読込」→ 該当するものだけチェック。課金月数＝実際に料金が発生する月数。日割りっぽい時は0.5などの小数もOK）</span>
+            <button class="btn ghost small" onclick="addCustomOption(${i})">＋ カスタム追加</button>
+          </div>
+          <div class="options-list">${optionsHtml(i, line)}</div>
+        </div>
+        <div class="line-actions">
+          <button class="btn ghost small" onclick="delLine(${i})">✕ この回線を削除</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function calcAll(){
+  const globalMonths = parseFloat(document.getElementById('months').value) || 1;
+
+  const results = lines.map((line, i) => {
+    const months = (line.monthsOverride !== '' && line.monthsOverride !== null && !isNaN(line.monthsOverride) && line.monthsOverride > 0)
+      ? line.monthsOverride : globalMonths;
+
+    const optionsCost = line.options.reduce((sum, o) => {
+      if(!o.checked) return sum;
+      return sum + (o.monthlyAmount||0) * (o.chargedMonths||0);
+    }, 0);
+
+    const monthlyNet = (line.monthly||0) - (line.house||0) - (line.denki||0) - (line.card||0);
+    const totalCost = (line.setup||0) + (line.cancel||0) + monthlyNet * months + optionsCost;
+    const netGain = (line.cashback||0) - totalCost;
+
+    return {i, name: line.label || line.plan || `回線${i+1}`, carrier: line.carrier, months, monthlyNet, optionsCost, totalCost, netGain, cashback: line.cashback||0};
+  });
+
+  results.forEach(res => {
+    const pill = document.getElementById(`pill-${res.i}`);
+    if(!pill) return;
+    const cls = res.netGain >= 0 ? 'plus' : 'minus';
+    const sign = res.netGain >= 0 ? '+' : '';
+    pill.className = 'result-pill ' + cls;
+    pill.textContent = `${sign}${Math.round(res.netGain).toLocaleString()}円`;
+  });
+
+  const sorted = [...results].sort((a,b) => b.netGain - a.netGain);
+  const rankingEl = document.getElementById('ranking');
+  if(sorted.length === 0){
+    rankingEl.innerHTML = '<div class="summary-row detail">回線を追加すると、ここにランキングが出るよ。</div>';
+  } else {
+    rankingEl.innerHTML = sorted.map((res, idx) => {
+      const rankClass = idx===0?'rank-1':idx===1?'rank-2':idx===2?'rank-3':'';
+      const cls = res.netGain >= 0 ? 'result-pill plus' : 'result-pill minus';
+      const sign = res.netGain >= 0 ? '+' : '';
+      return `
+        <div class="summary-row">
+          <div>
+            <span class="rank-badge ${rankClass}">${idx+1}</span>
+            <span class="name">${escapeHtml(res.name)}</span>
+            <div class="detail">キャッシュバック ${res.cashback.toLocaleString()}円 － 総支出 ${Math.round(res.totalCost).toLocaleString()}円（月額実質 ${Math.round(res.monthlyNet).toLocaleString()}円 × ${res.months}ヶ月＋オプション ${Math.round(res.optionsCost).toLocaleString()}円＋初期費用）</div>
+          </div>
+          <div class="${cls}" style="position:static;">${sign}${Math.round(res.netGain).toLocaleString()}円</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  renderTotalPanel(results, globalMonths);
+  lastResults = results;
+  lastGlobalMonths = globalMonths;
+
+  saveAll();
+  saveGlobal();
+}
+
+function renderTotalPanel(results, globalMonths){
+  const panel = document.getElementById('totalPanel');
+  if(results.length === 0){
+    panel.innerHTML = '';
+    return;
+  }
+  const totalCashback = results.reduce((s,r) => s + r.cashback, 0);
+  const totalCost = results.reduce((s,r) => s + r.totalCost, 0);
+  const totalNet = results.reduce((s,r) => s + r.netGain, 0);
+  const netClass = totalNet >= 0 ? 'net' : 'net minus';
+  const sign = totalNet >= 0 ? '+' : '';
+  panel.innerHTML = `
+    <div class="total-box cashback">
+      <div class="label">合計キャッシュバック（${results.length}回線）</div>
+      <div class="value">${totalCashback.toLocaleString()}円</div>
+    </div>
+    <div class="total-box cost">
+      <div class="label">合計維持費・諸費用</div>
+      <div class="value">${Math.round(totalCost).toLocaleString()}円</div>
+      <div class="sub-label">共通維持期間 ${globalMonths}ヶ月ベース（個別上書きあり）</div>
+    </div>
+    <div class="total-box ${netClass}">
+      <div class="label">🎉 最終的な純利益（総合計）</div>
+      <div class="value">${sign}${Math.round(totalNet).toLocaleString()}円</div>
+    </div>
+  `;
+}
+
+function copyResultsText(){
+  if(!lastResults || lastResults.length === 0){
+    alert('まだ回線が入力されてないよ。');
+    return;
+  }
+  const sorted = [...lastResults].sort((a,b) => b.netGain - a.netGain);
+  const totalNet = lastResults.reduce((s,r) => s + r.netGain, 0);
+  const lines_ = [];
+  lines_.push('📱 【MNP実質収支結果】');
+  lines_.push(`全体維持期間：${lastGlobalMonths}ヶ月`);
+  sorted.forEach(r => {
+    const sign = r.netGain >= 0 ? '+' : '';
+    lines_.push(`${r.name}（${r.carrier}）：${sign}${Math.round(r.netGain).toLocaleString()}円`);
+  });
+  lines_.push('━━━━━━━━━━━━━━');
+  const totalSign = totalNet >= 0 ? '+' : '';
+  lines_.push(`🎉 総実質収支：${totalSign}${Math.round(totalNet).toLocaleString()}円`);
+  const text = lines_.join('\n');
+
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(() => {
+      alert('結果をコピーしたよ。X(旧Twitter)やLINEにそのまま貼り付けられるよ。');
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try{
+    document.execCommand('copy');
+    alert('結果をコピーしたよ。');
+  } catch(e){
+    alert('コピーに失敗したよ。手動で選択してコピーしてね。\n\n' + text);
+  }
+  document.body.removeChild(ta);
+}
+
+let lastResults = [];
+let lastGlobalMonths = 1;
+
+init();
+</script>
+</body>
+</html>
